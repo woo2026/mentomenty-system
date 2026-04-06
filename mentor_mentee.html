@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>멘토·멘티 신청</title>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F5F0;
+    --surface: #FFFFFF;
+    --border: #E2DDD6;
+    --border-strong: #C8C2B8;
+    --text-primary: #1A1814;
+    --text-secondary: #6B6560;
+    --text-muted: #A09890;
+    --accent: #2D5016;
+    --accent-light: #EBF2E3;
+    --accent-mid: #5A8A30;
+    --blue: #1A3A6B;
+    --blue-light: #E3EAF5;
+    --blue-mid: #3A6BB5;
+    --amber: #6B4A10;
+    --amber-light: #F5EDDA;
+    --amber-mid: #C08020;
+    --red: #8B1A1A;
+    --radius: 8px;
+    --radius-lg: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Nanum Gothic', sans-serif; background: var(--bg); color: var(--text-primary); min-height: 100vh; }
+
+  #adminDot {
+    position: fixed; top: 18px; right: 18px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--border-strong); cursor: pointer; z-index: 500;
+    transition: background 0.2s, transform 0.2s;
+  }
+  #adminDot:hover { background: var(--text-muted); transform: scale(1.3); }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  #mainPage { max-width: 520px; margin: 0 auto; padding: 60px 24px 80px; }
+  .page-eyebrow { font-family: 'Gowun Batang', serif; font-size: 12px; letter-spacing: 0.2em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; }
+  .page-title { font-family: 'Gowun Batang', serif; font-size: 32px; font-weight: 700; line-height: 1.25; margin-bottom: 8px; }
+  .page-sub { font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 48px; }
+  .divider { width: 40px; height: 2px; background: var(--accent-mid); margin-bottom: 36px; }
+  .field-group { margin-bottom: 36px; }
+  .field-label { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.12em; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 10px; }
+
+  input[type="text"], input[type="password"] {
+    width: 100%; padding: 14px 16px;
+    font-family: 'Nanum Gothic', sans-serif; font-size: 15px;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--surface); color: var(--text-primary);
+    outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input:focus { border-color: var(--accent-mid); box-shadow: 0 0 0 3px rgba(90,138,48,0.12); }
+
+  .subject-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .subj-btn {
+    padding: 14px 8px; font-family: 'Nanum Gothic', sans-serif;
+    font-size: 14px; font-weight: 700;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--surface); color: var(--text-secondary);
+    cursor: pointer; transition: all 0.15s; text-align: center;
+  }
+  .subj-btn:hover { border-color: var(--border-strong); color: var(--text-primary); }
+  .subj-btn.sel-teach { background: var(--accent-light); border-color: var(--accent-mid); color: var(--accent); }
+  .subj-btn.sel-learn { background: var(--blue-light); border-color: var(--blue-mid); color: var(--blue); }
+  .subj-btn.sel-both  { background: var(--amber-light); border-color: var(--amber-mid); color: var(--amber); }
+
+  .chip-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .chip { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+  .chip-green { background: var(--accent-light); color: var(--accent); }
+  .chip-blue  { background: var(--blue-light); color: var(--blue); }
+  .chip-amber { background: var(--amber-light); color: var(--amber); }
+  .chip-gray  { background: #EEECE8; color: var(--text-secondary); }
+
+  .legend-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .error-msg { font-size: 12px; color: var(--red); margin-top: 7px; display: none; }
+
+  /* 파트너 체크박스 영역 */
+  .partner-check-box {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    padding: 18px 20px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .partner-check-box.checked {
+    border-color: var(--accent-mid);
+    background: var(--accent-light);
+  }
+  .check-row {
+    display: flex; align-items: center; gap: 12px; cursor: pointer;
+  }
+  .custom-checkbox {
+    width: 20px; height: 20px; border-radius: 5px;
+    border: 1.5px solid var(--border-strong);
+    background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.15s;
+  }
+  .custom-checkbox.on {
+    background: var(--accent-mid); border-color: var(--accent-mid);
+  }
+  .custom-checkbox.on::after {
+    content: ''; display: block;
+    width: 5px; height: 9px;
+    border: 2px solid #fff; border-top: none; border-left: none;
+    transform: rotate(45deg) translateY(-1px);
+  }
+  .check-label {
+    font-size: 15px; font-weight: 700; color: var(--text-primary);
+    user-select: none;
+  }
+  .check-sublabel {
+    font-size: 13px; color: var(--text-secondary); margin-top: 2px;
+    user-select: none;
+  }
+
+  .partner-name-wrap {
+    margin-top: 16px;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.3s ease, opacity 0.25s ease, margin-top 0.2s;
+  }
+  .partner-name-wrap.open {
+    max-height: 120px;
+    opacity: 1;
+    margin-top: 16px;
+  }
+
+  .submit-btn {
+    width: 100%; padding: 16px;
+    font-family: 'Nanum Gothic', sans-serif; font-size: 15px; font-weight: 800;
+    background: var(--text-primary); color: var(--bg);
+    border: none; border-radius: var(--radius);
+    cursor: pointer; letter-spacing: 0.06em;
+    transition: opacity 0.15s, transform 0.1s; margin-top: 8px;
+  }
+  .submit-btn:hover { opacity: 0.88; }
+  .submit-btn:active { transform: scale(0.99); }
+  .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .success-toast {
+    position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: #fff;
+    padding: 14px 28px; border-radius: 40px;
+    font-size: 14px; font-weight: 700;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    z-index: 300; white-space: nowrap;
+  }
+  .success-toast.show { opacity: 1; }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(26,24,20,0.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 400; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface); border-radius: var(--radius-lg);
+    padding: 28px; width: 320px; border: 1px solid var(--border);
+    transform: translateY(8px); transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-title { font-family: 'Gowun Batang', serif; font-size: 20px; font-weight: 700; margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .btn-cancel {
+    flex: 1; padding: 12px; font-family: 'Nanum Gothic', sans-serif; font-size: 14px;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: transparent; color: var(--text-secondary); cursor: pointer;
+  }
+  .btn-confirm {
+    flex: 1; padding: 12px; font-family: 'Nanum Gothic', sans-serif; font-size: 14px; font-weight: 800;
+    background: var(--text-primary); color: var(--bg);
+    border: none; border-radius: var(--radius); cursor: pointer;
+  }
+  .pw-error { font-size: 12px; color: var(--red); margin-top: 8px; display: none; }
+
+  /* ADMIN */
+  #adminPage { min-height: 100vh; }
+  .admin-topbar {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 32px; height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .admin-logo { font-family: 'Gowun Batang', serif; font-size: 18px; font-weight: 700; }
+  .admin-logo span { font-size: 12px; font-weight: 400; color: var(--text-muted); margin-left: 10px; font-family: 'Nanum Gothic', sans-serif; }
+  .logout-btn {
+    font-family: 'Nanum Gothic', sans-serif; font-size: 13px; padding: 7px 16px;
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: transparent; color: var(--text-secondary); cursor: pointer;
+  }
+  .logout-btn:hover { border-color: var(--border-strong); color: var(--text-primary); }
+
+  .admin-body { display: grid; grid-template-columns: 340px 1fr; min-height: calc(100vh - 60px); }
+  .admin-sidebar { border-right: 1px solid var(--border); background: var(--surface); padding: 28px 20px; overflow-y: auto; }
+  .sidebar-title { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; padding: 0 4px; }
+
+  .app-card { padding: 14px 16px; border-radius: var(--radius); border: 1px solid transparent; cursor: pointer; margin-bottom: 6px; transition: all 0.15s; }
+  .app-card:hover { background: var(--bg); border-color: var(--border); }
+  .app-card.active { background: var(--accent-light); border-color: var(--accent-mid); }
+  .app-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+  .app-card-name { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+  .app-card.active .app-card-name { color: var(--accent); }
+  .app-card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
+  .tag { font-size: 11px; padding: 2px 7px; border-radius: 4px; font-weight: 700; }
+  .tag-teach { background: var(--accent-light); color: var(--accent); }
+  .tag-learn { background: var(--blue-light); color: var(--blue); }
+  .tag-partner { background: #F0ECF8; color: #5A3A8A; }
+
+  .empty-list { font-size: 14px; color: var(--text-muted); text-align: center; padding: 40px 0; line-height: 1.7; }
+  .admin-main { padding: 40px; overflow-y: auto; }
+  .admin-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); text-align: center; }
+  .admin-placeholder p { font-size: 14px; line-height: 1.7; }
+
+  .match-header { margin-bottom: 32px; }
+  .match-name-big { font-family: 'Gowun Batang', serif; font-size: 28px; font-weight: 700; margin-bottom: 6px; }
+  .match-name-big span { font-size: 16px; font-weight: 400; color: var(--text-secondary); font-family: 'Nanum Gothic', sans-serif; }
+  .match-subject-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+
+  /* 파트너 선정 배너 */
+  .partner-banner {
+    background: #F0ECF8; border: 1px solid #C5B3E8;
+    border-radius: var(--radius); padding: 14px 18px;
+    margin-bottom: 24px; font-size: 14px; color: #5A3A8A;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .partner-banner-icon { font-size: 18px; flex-shrink: 0; }
+
+  .match-section-title {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 12px; margin-top: 28px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+  .match-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 18px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    margin-bottom: 8px;
+  }
+  .match-item-name { font-size: 15px; font-weight: 700; margin-bottom: 5px; }
+  .match-item-detail { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+  .match-score-badge { font-size: 14px; font-weight: 800; padding: 6px 14px; border-radius: 20px; white-space: nowrap; margin-left: 16px; flex-shrink: 0; }
+  .score-s { background: var(--accent-light); color: var(--accent); }
+  .score-a { background: var(--blue-light); color: var(--blue); }
+  .score-b { background: var(--amber-light); color: var(--amber); }
+  .score-none { background: var(--bg); color: var(--text-muted); }
+  .match-none-msg { font-size: 14px; color: var(--text-muted); padding: 20px 0; line-height: 1.7; }
+
+  .delete-btn {
+    font-size: 11px; padding: 3px 8px;
+    border: 1px solid var(--border); border-radius: 4px;
+    background: transparent; color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+  }
+  .delete-btn:hover { border-color: var(--red); color: var(--red); }
+
+  .loading-overlay {
+    position: fixed; inset: 0; background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 999; transition: opacity 0.4s;
+  }
+  .loading-overlay.hide { opacity: 0; pointer-events: none; }
+  .loading-text { font-family: 'Gowun Batang', serif; font-size: 18px; color: var(--text-secondary); }
+
+  @media (max-width: 720px) {
+    .admin-body { grid-template-columns: 1fr; }
+    .admin-sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+    .admin-main { padding: 24px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay"><div class="loading-text">불러오는 중...</div></div>
+<div id="adminDot" title="관리자"></div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title">관리자 로그인</div>
+    <label class="field-label">비밀번호</label>
+    <input type="password" id="pwInput" placeholder="비밀번호를 입력하세요" />
+    <div class="pw-error" id="pwError">비밀번호가 올바르지 않습니다.</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="cancelBtn">취소</button>
+      <button class="btn-confirm" id="loginBtn">확인</button>
+    </div>
+  </div>
+</div>
+
+<div class="success-toast" id="toast">✓ 신청이 완료되었습니다!</div>
+
+<!-- MAIN PAGE -->
+<div class="page active" id="mainPage">
+  <div style="max-width:520px; margin:0 auto; padding:60px 24px 80px;">
+    <div class="page-eyebrow">멘토·멘티 프로그램</div>
+    <h1 class="page-title">서로 가르치고<br>서로 배우는 시간</h1>
+    <div class="divider"></div>
+    <p class="page-sub">내가 잘하는 과목은 가르치고, 어려운 과목은 도움 받아요.<br>1~2개씩 선택 후 신청해 주세요.</p>
+
+    <div class="field-group">
+      <label class="field-label" for="nameInput">이름</label>
+      <input type="text" id="nameInput" placeholder="이름을 입력하세요" maxlength="10" />
+      <div class="error-msg" id="nameError"></div>
+    </div>
+
+    <div class="field-group">
+      <div class="chip-row">
+        <span class="chip chip-green">도움을 줄 과목</span>
+        <span style="font-size:11px; color:var(--text-muted); line-height:22px;">1~2개 선택</span>
+      </div>
+      <div class="subject-grid" id="teachGrid"></div>
+      <div class="error-msg" id="teachError"></div>
+    </div>
+
+    <div class="field-group">
+      <div class="chip-row">
+        <span class="chip chip-blue">도움을 받을 과목</span>
+        <span style="font-size:11px; color:var(--text-muted); line-height:22px;">1~2개 선택</span>
+      </div>
+      <div class="subject-grid" id="learnGrid"></div>
+      <div class="error-msg" id="learnError"></div>
+    </div>
+
+    <div class="legend-row" style="margin-bottom:36px;">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--accent-mid);"></div> 도움 줄 과목</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--blue-mid);"></div> 도움 받을 과목</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--amber-mid);"></div> 둘 다 선택</div>
+    </div>
+
+    <!-- 파트너 선정 여부 -->
+    <div class="field-group">
+      <label class="field-label">파트너 선정 여부</label>
+      <div class="partner-check-box" id="partnerBox">
+        <div class="check-row" id="checkRow">
+          <div class="custom-checkbox" id="customCheckbox"></div>
+          <div>
+            <div class="check-label">이미 파트너가 정해졌어요</div>
+            <div class="check-sublabel">체크하면 파트너 이름을 입력할 수 있어요</div>
+          </div>
+        </div>
+        <div class="partner-name-wrap" id="partnerNameWrap">
+          <label class="field-label" style="margin-top:0;">파트너 이름</label>
+          <input type="text" id="partnerNameInput" placeholder="파트너의 이름을 입력하세요" maxlength="10" />
+          <div class="error-msg" id="partnerError"></div>
+        </div>
+      </div>
+    </div>
+
+    <button class="submit-btn" id="submitBtn">신청하기</button>
+  </div>
+</div>
+
+<!-- ADMIN PAGE -->
+<div class="page" id="adminPage">
+  <div class="admin-topbar">
+    <div class="admin-logo">멘토·멘티 관리 <span id="countLabel"></span></div>
+    <button class="logout-btn" id="logoutBtn">로그아웃</button>
+  </div>
+  <div class="admin-body">
+    <div class="admin-sidebar">
+      <div class="sidebar-title">신청 목록</div>
+      <div id="appList"></div>
+    </div>
+    <div class="admin-main" id="adminMain">
+      <div class="admin-placeholder">
+        <p style="font-size:32px; margin-bottom:12px; opacity:0.2;">☜</p>
+        <p>왼쪽에서 신청자를 선택하면<br>매칭 결과를 확인할 수 있어요.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy
+} from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCwK7r13TxqVBsNnvQA785tD_B2qYAoo0M",
+  authDomain: "chungo-mentomenty.firebaseapp.com",
+  projectId: "chungo-mentomenty",
+  storageBucket: "chungo-mentomenty.firebasestorage.app",
+  messagingSenderId: "731414872972",
+  appId: "1:731414872972:web:0d2811de10aca6510dcca9"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+const COL = 'applications';
+
+const SUBJECTS = ['국어','영어','수학','사회','과학','한국사'];
+const ADMIN_PW = '0951';
+
+let applications = [];
+let teachSel = new Set();
+let learnSel = new Set();
+let selectedId = null;
+let partnerChecked = false;
+
+/* ── Firebase ── */
+async function loadData() {
+  try {
+    const q = query(collection(db, COL), orderBy('createdAt', 'desc'));
+    const snap = await getDocs(q);
+    applications = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch(e) { applications = []; }
+}
+
+async function addApp(data) {
+  const ref = await addDoc(collection(db, COL), { ...data, createdAt: Date.now() });
+  applications.unshift({ id: ref.id, ...data });
+}
+
+async function deleteApp(id) {
+  await deleteDoc(doc(db, COL, id));
+  applications = applications.filter(a => a.id !== id);
+}
+
+/* ── 파트너 체크박스 ── */
+document.getElementById('checkRow').onclick = () => {
+  partnerChecked = !partnerChecked;
+  const cb = document.getElementById('customCheckbox');
+  const wrap = document.getElementById('partnerNameWrap');
+  const box = document.getElementById('partnerBox');
+  cb.classList.toggle('on', partnerChecked);
+  wrap.classList.toggle('open', partnerChecked);
+  box.classList.toggle('checked', partnerChecked);
+  if (!partnerChecked) {
+    document.getElementById('partnerNameInput').value = '';
+    document.getElementById('partnerError').style.display = 'none';
+  } else {
+    setTimeout(() => document.getElementById('partnerNameInput').focus(), 320);
+  }
+};
+
+/* ── Subject grids ── */
+function buildGrids() {
+  ['teachGrid','learnGrid'].forEach(gid => {
+    const g = document.getElementById(gid);
+    const selSet = gid === 'teachGrid' ? teachSel : learnSel;
+    g.innerHTML = '';
+    SUBJECTS.forEach(s => {
+      const btn = document.createElement('button');
+      btn.className = 'subj-btn';
+      btn.textContent = s;
+      btn.dataset.s = s;
+      btn.onclick = () => {
+        if (selSet.has(s)) selSet.delete(s);
+        else { if (selSet.size >= 2) return; selSet.add(s); }
+        refreshHighlights();
+      };
+      g.appendChild(btn);
+    });
+  });
+}
+
+function refreshHighlights() {
+  SUBJECTS.forEach(s => {
+    const tBtn = document.querySelector(`#teachGrid [data-s="${s}"]`);
+    const lBtn = document.querySelector(`#learnGrid [data-s="${s}"]`);
+    if (!tBtn || !lBtn) return;
+    const inT = teachSel.has(s), inL = learnSel.has(s);
+    tBtn.className = 'subj-btn' + (inT && inL ? ' sel-both' : inT ? ' sel-teach' : '');
+    lBtn.className = 'subj-btn' + (inT && inL ? ' sel-both' : inL ? ' sel-learn' : '');
+  });
+}
+
+/* ── Submit ── */
+document.getElementById('submitBtn').onclick = async () => {
+  let ok = true;
+  const name = document.getElementById('nameInput').value.trim();
+  const nameErr = document.getElementById('nameError');
+  const teachErr = document.getElementById('teachError');
+  const learnErr = document.getElementById('learnError');
+  const partnerErr = document.getElementById('partnerError');
+
+  if (!name) {
+    nameErr.textContent = '이름을 입력해 주세요.'; nameErr.style.display = 'block'; ok = false;
+  } else if (applications.some(a => a.name === name)) {
+    nameErr.textContent = '이미 같은 이름으로 신청되어 있습니다.'; nameErr.style.display = 'block'; ok = false;
+  } else { nameErr.style.display = 'none'; }
+
+  if (teachSel.size === 0) {
+    teachErr.textContent = '도움을 줄 과목을 1개 이상 선택해 주세요.'; teachErr.style.display = 'block'; ok = false;
+  } else { teachErr.style.display = 'none'; }
+
+  if (learnSel.size === 0) {
+    learnErr.textContent = '도움을 받을 과목을 1개 이상 선택해 주세요.'; learnErr.style.display = 'block'; ok = false;
+  } else { learnErr.style.display = 'none'; }
+
+  let partnerName = '';
+  if (partnerChecked) {
+    partnerName = document.getElementById('partnerNameInput').value.trim();
+    if (!partnerName) {
+      partnerErr.textContent = '파트너 이름을 입력해 주세요.'; partnerErr.style.display = 'block'; ok = false;
+    } else { partnerErr.style.display = 'none'; }
+  } else { partnerErr.style.display = 'none'; }
+
+  if (!ok) return;
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = '저장 중...';
+  try {
+    await addApp({
+      name,
+      teach: [...teachSel],
+      learn: [...learnSel],
+      hasPartner: partnerChecked,
+      partnerName: partnerChecked ? partnerName : ''
+    });
+    resetForm();
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  } catch(e) {
+    alert('저장 중 오류가 발생했습니다. 다시 시도해 주세요.');
+  } finally {
+    btn.disabled = false; btn.textContent = '신청하기';
+  }
+};
+
+function resetForm() {
+  document.getElementById('nameInput').value = '';
+  document.getElementById('partnerNameInput').value = '';
+  teachSel.clear(); learnSel.clear(); refreshHighlights();
+  ['nameError','teachError','learnError','partnerError'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  partnerChecked = false;
+  document.getElementById('customCheckbox').classList.remove('on');
+  document.getElementById('partnerNameWrap').classList.remove('open');
+  document.getElementById('partnerBox').classList.remove('checked');
+}
+
+/* ── Admin modal ── */
+document.getElementById('adminDot').onclick = () => {
+  document.getElementById('modalOverlay').classList.add('open');
+  document.getElementById('pwInput').value = '';
+  document.getElementById('pwError').style.display = 'none';
+  setTimeout(() => document.getElementById('pwInput').focus(), 150);
+};
+document.getElementById('cancelBtn').onclick = () => document.getElementById('modalOverlay').classList.remove('open');
+document.getElementById('pwInput').onkeydown = e => { if (e.key === 'Enter') document.getElementById('loginBtn').click(); };
+document.getElementById('loginBtn').onclick = async () => {
+  if (document.getElementById('pwInput').value === ADMIN_PW) {
+    document.getElementById('modalOverlay').classList.remove('open');
+    await loadData();
+    document.getElementById('mainPage').classList.remove('active');
+    document.getElementById('adminPage').classList.add('active');
+    renderSidebar();
+  } else {
+    document.getElementById('pwError').style.display = 'block';
+  }
+};
+
+document.getElementById('logoutBtn').onclick = () => {
+  selectedId = null;
+  document.getElementById('adminPage').classList.remove('active');
+  document.getElementById('mainPage').classList.add('active');
+};
+
+/* ── Admin sidebar ── */
+function renderSidebar() {
+  const list = document.getElementById('appList');
+  document.getElementById('countLabel').textContent = `— 총 ${applications.length}명`;
+  list.innerHTML = '';
+  if (applications.length === 0) {
+    list.innerHTML = '<div class="empty-list">아직 신청 내역이<br>없습니다.</div>'; return;
+  }
+  applications.forEach(app => {
+    const card = document.createElement('div');
+    card.className = 'app-card' + (selectedId === app.id ? ' active' : '');
+    const partnerTag = app.hasPartner
+      ? `<span class="tag tag-partner">파트너 있음</span>`
+      : '';
+    card.innerHTML = `
+      <div class="app-card-top">
+        <div class="app-card-name">${esc(app.name)}</div>
+        <button class="delete-btn" data-id="${app.id}">삭제</button>
+      </div>
+      <div class="app-card-tags">
+        ${app.teach.map(s=>`<span class="tag tag-teach">${s}</span>`).join('')}
+        ${app.learn.map(s=>`<span class="tag tag-learn">${s}</span>`).join('')}
+        ${partnerTag}
+      </div>`;
+    card.querySelector('.delete-btn').onclick = async (e) => {
+      e.stopPropagation();
+      if (!confirm(`${app.name}님의 신청을 삭제할까요?`)) return;
+      await deleteApp(app.id);
+      if (selectedId === app.id) {
+        selectedId = null;
+        document.getElementById('adminMain').innerHTML = `<div class="admin-placeholder"><p style="font-size:32px;margin-bottom:12px;opacity:0.2;">☜</p><p>왼쪽에서 신청자를 선택하면<br>매칭 결과를 확인할 수 있어요.</p></div>`;
+      }
+      renderSidebar();
+    };
+    card.onclick = (e) => {
+      if (e.target.classList.contains('delete-btn')) return;
+      selectedId = app.id; renderSidebar(); renderMatches(app);
+    };
+    list.appendChild(card);
+  });
+}
+
+/* ── Matches ── */
+function renderMatches(target) {
+  const main = document.getElementById('adminMain');
+  const others = applications.filter(a => a.id !== target.id);
+  const scored = others.map(a => {
+    const teachToTarget = target.learn.filter(s => a.teach.includes(s));
+    const learnFromTarget = target.teach.filter(s => a.learn.includes(s));
+    return { app: a, score: teachToTarget.length*2 + learnFromTarget.length*2, teachToTarget, learnFromTarget };
+  }).sort((a,b) => b.score - a.score || a.app.name.localeCompare(b.app.name,'ko'));
+
+  const maxScore = scored.length > 0 ? scored[0].score : 0;
+  const withMatch = scored.filter(s => s.score > 0);
+  const noMatch   = scored.filter(s => s.score === 0);
+
+  let html = `
+    <div class="match-header">
+      <div class="match-name-big">${esc(target.name)} <span>님의 매칭</span></div>
+      <div class="match-subject-row">
+        ${target.teach.map(s=>`<span class="chip chip-green">${s} 가르침</span>`).join('')}
+        ${target.learn.map(s=>`<span class="chip chip-blue">${s} 배움</span>`).join('')}
+      </div>
+    </div>`;
+
+  // 파트너 선정된 경우 배너 표시
+  if (target.hasPartner && target.partnerName) {
+    html += `
+      <div class="partner-banner">
+        <span class="partner-banner-icon">🤝</span>
+        <span>이미 파트너가 정해진 상태예요 — <strong>${esc(target.partnerName)}</strong>님과 함께할 예정</span>
+      </div>`;
+  }
+
+  if (others.length === 0) { html += `<div class="match-none-msg">비교할 다른 신청자가 없습니다.</div>`; main.innerHTML = html; return; }
+
+  if (withMatch.length > 0) {
+    html += `<div class="match-section-title">매칭 가능 — ${withMatch.length}명</div>`;
+    withMatch.forEach(({app, score, teachToTarget, learnFromTarget}) => {
+      const pct = maxScore > 0 ? score/maxScore : 0;
+      const cls = pct >= 0.75 ? 'score-s' : pct >= 0.4 ? 'score-a' : 'score-b';
+      const label = pct >= 0.75 ? 'S' : pct >= 0.4 ? 'A' : 'B';
+      const details = [];
+      if (learnFromTarget.length) details.push(`<span style="color:var(--accent);">↑ ${esc(target.name)}이(가) 가르칠 수 있음: ${learnFromTarget.join(', ')}</span>`);
+      if (teachToTarget.length) details.push(`<span style="color:var(--blue);">↓ ${esc(app.name)}이(가) 가르칠 수 있음: ${teachToTarget.join(', ')}</span>`);
+      const partnerNote = app.hasPartner ? ` <span style="font-size:11px;color:#5A3A8A;">(파트너 있음)</span>` : '';
+      html += `
+        <div class="match-item">
+          <div>
+            <div class="match-item-name">${esc(app.name)}${partnerNote}</div>
+            <div class="match-item-detail">${details.join('<br>')}</div>
+          </div>
+          <div class="match-score-badge ${cls}">${label} · ${score}점</div>
+        </div>`;
+    });
+  } else {
+    html += `<div class="match-none-msg">과목이 겹치는 신청자가 없습니다.</div>`;
+  }
+
+  if (noMatch.length > 0) {
+    html += `<div class="match-section-title">매칭 없음 — ${noMatch.length}명</div>`;
+    noMatch.forEach(({app}) => {
+      const partnerNote = app.hasPartner ? ` <span style="font-size:11px;color:#5A3A8A;">(파트너 있음)</span>` : '';
+      html += `
+        <div class="match-item" style="opacity:0.4;">
+          <div>
+            <div class="match-item-name">${esc(app.name)}${partnerNote}</div>
+            <div class="match-item-detail">겹치는 과목 없음</div>
+          </div>
+          <div class="match-score-badge score-none">0점</div>
+        </div>`;
+    });
+  }
+
+  main.innerHTML = html;
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ── Init ── */
+(async () => {
+  await loadData();
+  buildGrids();
+  document.getElementById('loadingOverlay').classList.add('hide');
+})();
+</script>
+</body>
+</html>
